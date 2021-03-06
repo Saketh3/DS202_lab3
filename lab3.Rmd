@@ -1,0 +1,164 @@
+---
+title: "DS202_lab3"
+author: "Saketh Jonnadula"
+date: "3/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Setup and cleaning up the data
+```{r}
+dat <- readxl::read_xls('/Users/Saketh3/desktop/DS202/DS202_lab3/GSS.xls')
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+
+dat <- dat %>% rename(year = `Gss year for this respondent`, id = `Respondent id number`, hours = `Number of hours usually work a week`, marital = `Marital status`, school = `Highest year of school completed`, sex = `Respondents sex`, party = `Political party affiliation`, happiness = `General happiness`, ballotUsed = `Ballot used for interview`)
+```
+
+Question #1
+```{r}
+newdf <- as.data.frame(dat)
+newdf <- filter(newdf, school != 'No answer' & school != "Don't know" & !is.na(school) & school != "NA" )
+unique(newdf$school)
+newdf$school <- as.numeric(newdf$school)
+ggplot(newdf, aes(y=school, x=marital), fill=school) + geom_boxplot()+xlab("Marital Status")+ylab("Education")+ggtitle("Marital Status vs. Education")
+
+```
+
+You can see that the ones with no answer seem to have the highest mean education,which I didnt expect or account for. You also can see the rest have around the same mean seems to be in the range of 11-13.
+
+
+
+Question #2
+```{r}
+df <- as.data.frame(dat)
+df <- filter(df, school != "Don't know" & school != 'No answer' & school != "NA" & !is.na(school))
+df$school <- as.numeric(df$school)
+
+df %>% group_by(marital) %>% summarize(meanRate = mean(school, na.rm=TRUE), sdRate = sd(school, na.rm=TRUE), numRows = n())
+
+```
+
+Question #3
+```{r}
+df2 <- as.data.frame(dat)
+str(df2)
+
+dfHappy <- df2 %>% group_by(marital) %>% filter(happiness=="Pretty happy" | happiness=="Very happy") %>% filter(marital!="No answer")
+dfNotHappy <- df2 %>% group_by(marital) %>% filter(happiness=="Not too happy") %>% filter(marital!="No answer")
+
+notHappy <- dfNotHappy %>% group_by(marital) %>% summarize(toalUnhappy = n())
+#notHappy
+
+happy <- dfHappy %>% group_by(marital) %>% summarize(totalHappy = n())
+#happy
+
+ggplot(dfHappy, aes(x=marital)) + geom_bar(fill="green") + ggtitle("Happiness vs Marital Status")+xlab("Marital Status")+ylab("Number")
+ggplot(dfNotHappy, aes(x=marital)) + geom_bar(fill="green")  + ggtitle("Unhappiness vs Marital Status")+xlab("Marital Status")+ylab("Number")
+
+```
+
+It would seem that there are more people married and happy than there are of any other group.There are about 30,000 happy people that are married and around 2500 people that are unhappy and married so I would say that people are generally happier while married. It also seems that never married people are happier than the other groups of people expect the married people.
+
+
+
+Question #4
+```{r}
+unique(dfHappy$party)
+
+dfHappy2<- dfHappy %>% group_by(marital) %>% filter(party=="Independent" | party=="Ind,near rep" | party=="Ind,near dem")
+#dfHappy2
+
+indy1 <- dfHappy2 %>% summarize(totalHappyI = n())
+#indy1
+ggplot(dfHappy2, aes(x=party)) + geom_bar(fill="black") + ggtitle("Happy Independents")+xlab("Party")+ylab("Count")
+
+
+dfNotHappy2 <- dfNotHappy %>% group_by(marital) %>% filter(party=="Independent" | party=="Ind,near rep" | party=="Ind,near dem")
+#dfNotHappy2
+
+indy2 <- dfNotHappy2 %>% summarize(totalNotHappyI = n())
+#indy2
+ggplot(dfNotHappy2, aes(x=party)) + geom_bar(fill="black") + ggtitle("Unhappy Independents")+xlab("Party")+ylab("Count")
+
+dfHappy3 <- dfHappy %>% group_by(marital) %>% filter(party=="Strong republican" | party=="Not str republican") 
+rep1 <- dfHappy3 %>% summarize(totalHappyR = n())
+#rep1
+ggplot(dfHappy3, aes(x=party)) + geom_bar(fill="red") + ggtitle("Happy Republicans")+xlab("Party")+ylab("Count")
+
+dfNotHappy3 <- dfNotHappy %>% group_by(marital) %>% filter(party=="Strong republican" | party=="Not str republican")
+rep2 <- dfNotHappy3 %>% summarize(totalNotHappyR = n())
+#rep2
+ggplot(dfNotHappy3, aes(x=party)) + geom_bar(fill="red") + ggtitle("Unhappy Republicans")+xlab("Party")+ylab("Count")
+
+dfHappy4 <- dfHappy %>% group_by(marital) %>% filter(party=="Strong democrat" | party=="Not str democrat")
+dem1 <- dfHappy4 %>% summarize(totalHappyR = n())
+#dem1
+ggplot(dfHappy4, aes(x=party)) + geom_bar(fill="blue") + ggtitle("Happy Democrats")+xlab("Party")+ylab("Count")
+
+dfNotHappy4 <- dfNotHappy %>% group_by(marital) %>% filter(party=="Strong democrat" | party=="Not str democrat")
+dem2 <- dfNotHappy4 %>% summarize(totalNotHappyR = n())
+#dem2
+ggplot(dfNotHappy4, aes(x=party)) + geom_bar(fill="blue") + ggtitle("Unhappy Democrats")+xlab("Party")+ylab("Count")
+
+```
+
+It looks like that there are similar amounts of happy and unhappy democrats as well as happy and unhappy republicans as well as happy and unhappy independents, but numbers wise it would look like that there are more happy people all round but if you see it in a ratio standpoint then its very similar. it just shows that party affiliation is not a factor in happiness for marital status.
+
+
+Question #5
+```{r}
+df5 <- as.data.frame(dat)
+df5 <- filter(df5, !is.na(school) & school != 'No answer' & school != "Don't know" & school != "NA" )
+unique(df5$school)
+df5$school <- as.numeric(df5$school)
+
+ggplot(data = df5, aes(x = marital, y = school)) + geom_boxplot() + ggtitle("Education vs Marital") + xlab("Marital Status") + ylab("Education")
+```
+
+Overall, the group of married people has the highest total amount of education, distantly followed by the never married group. Since this is the total education though, we can not tell if this is solely due to married people having more education or if there were just many more married people than other groups. This graph also shows that the total education of the No Answer group is much less than the total education for all other groups.
+
+Question #6
+Happiness vs hours worked
+```{r}
+df6 <- select(dat, hours, happiness)
+df6$hours <- as.numeric(df6$hours)
+
+dfHappy <- df2 %>% group_by(hours) %>% filter(happiness=="Pretty happy" | happiness=="Very happy") %>% filter(hours!="Not applicable")
+dfNotHappy <- df2 %>% group_by(hours) %>% filter(happiness=="Not too happy") %>% filter(hours !="Not applicable")
+
+notHappy <- dfNotHappy %>% group_by(hours) %>% summarize(totalUnhappy = n())
+
+happy <- dfHappy %>% group_by(hours) %>% summarize(totalHappy = n())
+
+ggplot(dfHappy, aes(x= hours)) + geom_bar(fill="purple") + ggtitle("Hours Worked vs Happiness")+xlab("Hours")+ylab("Number")
+ggplot(dfNotHappy, aes(x=hours)) + geom_bar(fill="purple")  + ggtitle("Hours Worked vs Unhapiness")+xlab("Hours")+ylab("Number")
+```
+
+You can see that more people are relativity happy with the amount of hours they work. So you can see that there is some corrilation to happiness and hours worked because some people enjoy working long work weeks and some people enjoy having short hour weeks. 
+
+Question #6
+Happiness vs education
+```{r}
+df6 <- select(dat, school, happiness)
+df6$school <- as.numeric(df6$school)
+
+dfHappy <- df2 %>% group_by(school) %>% filter(happiness=="Pretty happy" | happiness=="Very happy") %>% filter(school != 'No answer' & school != "Don't know" & school != "NA" )
+
+dfNotHappy <- df2 %>% group_by(school) %>% filter(happiness=="Not too happy") %>% filter(school != 'No answer' & school != "Don't know" & school != "NA" )
+
+notHappy <- dfNotHappy %>% group_by(school) %>% summarize(totalUnhappy = n())
+
+happy <- dfHappy %>% group_by(school) %>% summarize(totalHappy = n())
+
+ggplot(dfHappy, aes(x= school)) + geom_bar(fill="orange") + ggtitle("Years in School vs Happiness")+xlab("Years in School")+ylab("Number") 
+ggplot(dfNotHappy, aes(x = school)) + geom_bar(fill="orange") + ggtitle("Years in School vs Unhapiness")+xlab("Years in School")+ylab("Number")
+
+```
+
+It is pretty much the same as hours worked, it seems that people that did higher education are happier than the people that didnt do it but it also looks like some people regretted doing their higher education.
+
